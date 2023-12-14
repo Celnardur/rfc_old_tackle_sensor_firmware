@@ -1,0 +1,4 @@
+#pragma DATA _CONFIG1H, 0xC8  // INTERNAL CLOCK
+#pragma DATA _CONFIG2H, 0x00
+#pragma DATA _CONFIG3H, 0x81
+#pragma DATA _CONFIG4L, 0x81
