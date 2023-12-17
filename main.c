@@ -47,6 +47,7 @@ uint32_t tick = 0;
 
 void clock10ms();
 uint8_t spi_read_register(uint8_t reg);
+void spi_write_register(uint8_t reg, uint8_t data);
 
 void main(void)
 {
@@ -76,24 +77,41 @@ void main(void)
     IO_RD0_SetDigitalOutput();
     IO_RD0_SetHigh();
 
+    IO_RB0_SetDigitalInput();
+
     TMR1_StartTimer();
     
     SPI_Enable();
 
+    uint32_t tackle_tick = 0;
     uint32_t last_measurment = 0;
+
+    // disable I2C
+    spi_write_register(0x0D, 0x80);
+
+    // set mode to measurment
+    spi_write_register(0x16, 0x01);
+    // uint8_t mode = spi_read_register(0x16);
 
     while (1)
     {
-        if (tick % 10 == 0 && last_measurment != tick)
+        // if a measurment is ready
+        if (tick % 4 == 0 && tick != last_measurment)
         {
             last_measurment = tick;
-            uint8_t addr = spi_read_register(0x0D);
-            // This checks the 12C address register to see if SPI is working
-            if (addr ==  0x1D) 
+
+            // get raw data
+            int8_t x_acc = (int8_t)spi_read_register(0x06);
+            int8_t y_acc = (int8_t)spi_read_register(0x07);
+            int8_t z_acc = (int8_t)spi_read_register(0x08);
+
+            // if greater than one g horizontal - 16 per g
+            if (x_acc > 16 || x_acc < -16 || y_acc > 16 || y_acc < -16)
             {
+                tackle_tick = tick;
                 IO_RC0_SetHigh();
-            }
-            else
+            } 
+            else if (tick - tackle_tick > 100) 
             {
                 IO_RC0_SetLow();
             }
@@ -108,6 +126,14 @@ uint8_t spi_read_register(uint8_t reg)
     uint8_t data = SPI_ExchangeByte(0);
     IO_RD0_SetHigh();
     return data;
+}
+
+void spi_write_register(uint8_t reg, uint8_t data)
+{
+    IO_RD0_SetLow();
+    SPI_ExchangeByte(0x80 | (reg << 1));
+    SPI_ExchangeByte(data);
+    IO_RD0_SetHigh();
 }
 
 void clock10ms() {
