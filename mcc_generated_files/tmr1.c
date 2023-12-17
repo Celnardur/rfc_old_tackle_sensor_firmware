@@ -66,10 +66,10 @@ void TMR1_Initialize(void)
     //Set the Timer to the options selected in the GUI
 	
 	// TMR1H 246; 
-		TMR1H = 0xF6;
+		TMR1H = 0xD8;
 	
 	// TMR1L 60; 
-		TMR1L = 0x3C;
+		TMR1L = 0xF0;
 
     // Load the TMR value to reload variable
     timer1ReloadVal=TMR1;
