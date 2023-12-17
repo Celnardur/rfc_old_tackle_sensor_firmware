@@ -46,6 +46,7 @@
 uint32_t tick = 0;
 
 void clock10ms();
+uint8_t spi_read_register(uint8_t reg);
 
 void main(void)
 {
@@ -70,21 +71,48 @@ void main(void)
 
     TMR1_SetInterruptHandler(clock10ms);
     IO_RC0_SetDigitalOutput();
-    IO_RC0_SetHigh();
+    IO_RC0_SetLow();
+
+    IO_RD0_SetDigitalOutput();
+    IO_RD0_SetHigh();
 
     TMR1_StartTimer();
+    
+    SPI_Enable();
+
+    uint32_t last_measurment = 0;
 
     while (1)
     {
-        // Add your application code
-        ;
+        if (tick % 10 == 0 && last_measurment != tick)
+        {
+            last_measurment = tick;
+            uint8_t addr = spi_read_register(0x0D);
+            // This checks the 12C address register to see if SPI is working
+            if (addr ==  0x1D) 
+            {
+                IO_RC0_SetHigh();
+            }
+            else
+            {
+                IO_RC0_SetLow();
+            }
+        }
     }
+}
+
+uint8_t spi_read_register(uint8_t reg)
+{
+    IO_RD0_SetLow();
+    SPI_ExchangeByte(reg << 1);
+    uint8_t data = SPI_ExchangeByte(0);
+    IO_RD0_SetHigh();
+    return data;
 }
 
 void clock10ms() {
     if (tick % 50 == 0)
     {
-        IO_RC0_Toggle();
     }
     tick += 1;
 }
