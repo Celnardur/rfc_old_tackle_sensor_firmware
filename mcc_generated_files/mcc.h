@@ -55,6 +55,7 @@
 #include "interrupt_manager.h"
 #include "spi.h"
 #include "tmr1.h"
+#include "eusart.h"
 
 
 

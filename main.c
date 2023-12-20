@@ -85,6 +85,7 @@ void main(void)
 
     uint32_t tackle_tick = 0;
     uint32_t last_measurment = 0;
+    uint32_t last_send = 0;
 
     // disable I2C
     spi_write_register(0x0D, 0x80);
@@ -95,6 +96,16 @@ void main(void)
 
     while (1)
     {
+        if (tick % 100 == 0 && tick != last_send) 
+        {
+            last_send = tick;
+            
+            if (EUSART_is_rx_ready() && EUSART_Read() == 'R')
+            {
+                IO_RC0_SetHigh();
+            }
+        }
+        
         // if a measurment is ready
         if (tick % 4 == 0 && tick != last_measurment)
         {
