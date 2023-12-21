@@ -73,6 +73,10 @@ void main(void)
     TMR1_SetInterruptHandler(clock10ms);
     IO_RC0_SetDigitalOutput();
     IO_RC0_SetLow();
+    IO_RC1_SetDigitalOutput();
+    IO_RC1_SetLow();
+    IO_RC2_SetDigitalOutput();
+    IO_RC2_SetLow();
 
     IO_RD0_SetDigitalOutput();
     IO_RD0_SetHigh();
@@ -83,9 +87,11 @@ void main(void)
     
     SPI_Enable();
 
+    bool color_mode = false;
+    bool tackled = false;
+
     uint32_t tackle_tick = 0;
     uint32_t last_measurment = 0;
-    uint32_t last_send = 0;
 
     // disable I2C
     spi_write_register(0x0D, 0x80);
@@ -96,14 +102,19 @@ void main(void)
 
     while (1)
     {
-        if (tick % 100 == 0 && tick != last_send) 
+
+        if (EUSART_is_rx_ready())
         {
-            last_send = tick;
-            
-            if (EUSART_is_rx_ready() && EUSART_Read() == 'R')
+            char input = EUSART_Read();
+            if (input == 'W')
             {
-                IO_RC0_SetHigh();
+                color_mode = true;
+            } 
+            else if (input == 'G') 
+            {
+                color_mode = false;
             }
+
         }
         
         // if a measurment is ready
@@ -120,12 +131,31 @@ void main(void)
             if (x_acc > 16 || x_acc < -16 || y_acc > 16 || y_acc < -16)
             {
                 tackle_tick = tick;
-                IO_RC0_SetHigh();
+                tackled = true;
             } 
             else if (tick - tackle_tick > 100) 
             {
-                IO_RC0_SetLow();
+                tackled = false;
             }
+        }
+
+        if (tackled)
+        {
+            IO_RC0_SetHigh();
+            IO_RC1_SetLow();
+            IO_RC2_SetLow();
+        }
+        else if (color_mode)
+        {
+            IO_RC0_SetHigh();
+            IO_RC1_SetHigh();
+            IO_RC2_SetHigh();
+        }
+        else
+        {
+            IO_RC0_SetLow();
+            IO_RC1_SetHigh();
+            IO_RC2_SetLow();
         }
     }
 }
